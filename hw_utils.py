@@ -17,7 +17,7 @@ def quantification_set(data_frame, column_label):
     unique_values = set()
     for values in data_frame[column_label]:        
         unique_values |= set(values.split(','))
-    
+
     for value in unique_values:
         label = f'{column_label}_{value}'
         data_frame[label] = len(data_frame)*[0]
@@ -92,3 +92,74 @@ def print_clusters_info(data_frame_clustered, item_id_label=None, clustering_col
                 print(item_id)
         print()
 
+# ------------------------ HW 2 ------------------------
+
+def pivotal_conf_interval(feat_means, quantile=1.96, mean=None, std=None):
+    if mean is None:
+        mean = feat_means.mean()
+        
+    if std is None:
+        std = feat_means.std()
+    
+    shift = quantile * std
+    lbp_piv = mean - shift
+    rbp_piv = mean + shift
+
+    return lbp_piv, rbp_piv
+
+
+def non_pivotal_conf_interval(feat_means, confidense=0.95):
+    n_trials = feat_means.shape[0]
+    
+    left = (1. - confidense) / 2.
+    right = confidense + left
+
+    left_idx = np.floor(left * n_trials).astype(np.int64)
+    right_idx = np.floor(right * n_trials).astype(np.int64)
+
+    means_sorted = np.sort(feat_means)
+    lbp_non_piv = means_sorted[left_idx]
+    rbp_non_piv = means_sorted[right_idx]
+
+    return lbp_non_piv, rbp_non_piv
+
+
+def bootstrap(
+    feature, pivotal=True, non_pivotal=True, sample_size=None, \
+    num_trials=5000, quantile=1.96, confidense=0.95):
+    
+    n = feature.shape[0]
+    
+    if sample_size is None:
+        sample_size = n
+    
+    indices = np.random.uniform(
+        low=0, high=n, size=(sample_size, num_trials))
+    indices = np.floor(indices).astype(np.int64)
+        
+    feat_boots = feature[indices]
+    feat_means = feat_boots.mean(axis=0)
+    
+    mean = feat_means.mean()
+    std = feat_means.std()
+    
+    stats = {
+        'mean_trials': feat_means,
+        'mean': mean,
+        'std': std
+    }
+    
+    res = [stats]
+    
+    if pivotal:      
+        conf_int_piv = pivotal_conf_interval(feat_means, quantile, mean, std)
+        res.append(conf_int_piv)
+        
+    if non_pivotal:
+        conf_int_non_piv = non_pivotal_conf_interval(feat_means, confidense)
+        res.append(conf_int_non_piv)
+    
+    if len(res) > 1:
+        return tuple(res)
+    
+    return stats
