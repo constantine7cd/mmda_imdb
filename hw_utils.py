@@ -44,7 +44,7 @@ def standardization(data_frame, columns_lebels=None, is_range_based=True):
 
     return data_frame
 
-# ------------------------ HW 1 ------------------------
+# ------------------------ HW 2 ------------------------
 
 def cluster(data_frame, clusters_number, clustering_columns_labels=None):
     import sklearn.cluster
@@ -92,7 +92,7 @@ def print_clusters_info(data_frame_clustered, item_id_label=None, clustering_col
                 print(item_id)
         print()
 
-# ------------------------ HW 2 ------------------------
+# ------------------------ HW 3 ------------------------
 
 def pivotal_conf_interval(feat_means, quantile=1.96, mean=None, std=None):
     if mean is None:
@@ -163,3 +163,39 @@ def bootstrap(
         return tuple(res)
     
     return stats
+
+# ------------------------ HW 4 ------------------------
+
+def contingency_table(df, first_feature, second_feature):
+    # P(first_feature | second_feature)
+    conditional_frequency_table = pd.crosstab(df[first_feature], df[second_feature], normalize='columns')
+
+    quetelet_table = pd.crosstab(df[first_feature], df[second_feature])
+
+    n = quetelet_table.to_numpy().sum()
+    quetelet_table_copy = quetelet_table.copy()
+    for i in range(len(quetelet_table)):
+        for j in range(len(quetelet_table.columns)):
+            pi = sum(quetelet_table_copy.iloc[i, :])
+            pj = sum(quetelet_table_copy.iloc[:, j])
+            quetelet_table.iloc[i, j] = n * quetelet_table.iloc[i, j] / (pi * pj) - 1
+
+    return conditional_frequency_table, quetelet_table
+
+def average_quetelet_index(conditional_frequency_table, quetelet_table):
+    res = conditional_frequency_table.copy()
+    res.iloc[:, :] = conditional_frequency_table.to_numpy() * conditional_frequency_table.to_numpy()
+    return res
+
+def numbers_of_observations_to_be_associated(average_quetelet_index, confidence_level):
+    from scipy.stats import chi2
+    from math import ceil
+
+    n = len(average_quetelet_index)
+    k = len(average_quetelet_index.columns)
+    df = (n - 1)*(k - 1)
+
+    x = average_quetelet_index.to_numpy().sum()
+    
+    return ceil(chi2.ppf(confidence_level, df) / x)
+
