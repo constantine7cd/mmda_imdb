@@ -63,6 +63,7 @@ def cluster(data_frame, clusters_number, clustering_columns_labels=None):
 
 def print_clusters_info(data_frame_clustered, item_id_label=None, clustering_columns_labels=None):
     from IPython.display import display
+    from itertools import islice
 
     if clustering_columns_labels is None:
         clustering_columns_labels = data_frame_clustered.labels
@@ -86,10 +87,12 @@ def print_clusters_info(data_frame_clustered, item_id_label=None, clustering_col
         print('------------------------------')
         display(statistics)
         if item_id_label is not None:
-            print("Items:")
             items_in_claster = data_frame_clustered[item_id_label][data_frame_clustered['Cluster'] == claster_id]
-            for item_id in items_in_claster:
-                print(item_id)
+            print(f'Cluster size: {len(items_in_claster)}')
+            print()
+            print(f'Few items from the cluster:')
+            for item_id in islice(items_in_claster, 5):
+                print('-', item_id)
         print()
 
 # ------------------------ HW 3 ------------------------
