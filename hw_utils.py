@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import sklearn as sk
 
+import numpy.linalg as L
+
 # ------------------------ data preprocessing ------------------------
 
 def quantification_scalar(data_frame, column_label):
@@ -202,3 +204,69 @@ def numbers_of_observations_to_be_associated(average_quetelet_index, confidence_
     
     return ceil(chi2.ppf(confidence_level, df) / x)
 
+# ------------------------ HW 5 ------------------------
+
+def zscoring_standartization(data, eps=1e-8):
+    return (data - np.mean(data, axis=0)) / (np.std(data, axis=0) + eps)
+
+
+def range_standartization(data, eps=1e-8):
+    range_ = np.max(data, axis=0) - np.min(data, axis=0)
+    return (data - np.mean(data, axis=0)) / (range_ + eps)
+
+
+def rank_standartization(data, eps=1e-8):
+    min_ = np.min(data, axis=0)
+    range_ = np.max(data, axis=0) - min_
+    return (data - min_) / (range_ + eps)
+
+
+def data_scatter(data):
+    return np.sum(np.square(data)) #np.sum(np.square(data)) 
+
+
+def svd(data):
+    u, s, vh = L.svd(data, full_matrices=True)
+
+    return -u, s, -vh
+
+
+def svd_scatter_contrib(data):
+    scatter = data_scatter(data)
+    u, s, vh = svd(data)
+
+    natural_contrib = np.square(s)
+    percent_contrib = natural_contrib / scatter
+
+    return u, s, vh, scatter, natural_contrib, percent_contrib
+
+
+def conventional_pca(X, standardized=False):    
+    if standardized is False:
+        mean_x = np.mean(X, axis=0)
+        Y = np.subtract(X, mean_x) 
+        B = (Y.T@Y)/Y.shape[0] 
+        L, C = np.linalg.eig(B)  
+        sorted_idx = np.argsort(L)[::-1] 
+        la1 = L[sorted_idx[0]]
+        c1 = C[:, sorted_idx[0]]  
+        pc1 = np.divide(Y@c1, np.sqrt(Y.shape[0]*la1))    
+        B_dot = B - la1*np.multiply(c1, c1.T) 
+        L_, C_ = np.linalg.eig(B_dot)
+        argmax_ = np.argmax(L_)
+        la2 = L_[argmax_]
+        c2 = C_[:, argmax_]
+        pc2 = np.divide(Y@c2, np.sqrt(Y.shape[0]*la2))  
+    else:
+        Y = X
+        B = (Y.T@Y)/Y.shape[0] 
+        L, C = np.linalg.eig(B)
+        sorted_idx = np.argsort(L)[::-1]  
+        la1 = L[sorted_idx[0]]
+        c1 = C[:, sorted_idx[0]]  
+        pc1 = np.divide(Y@c1, np.sqrt(Y.shape[0]*la1))  
+        la2 = L[sorted_idx[1]]
+        c2 = -C[:, sorted_idx[1]]  
+        pc2 = np.divide(Y@c2, np.sqrt(Y.shape[0]*la2))
+    
+    return pc1, pc2
