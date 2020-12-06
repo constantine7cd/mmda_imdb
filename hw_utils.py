@@ -245,13 +245,13 @@ def conventional_pca(X, standardized=False):
     if standardized is False:
         mean_x = np.mean(X, axis=0)
         Y = np.subtract(X, mean_x) 
-        B = (Y.T@Y)/Y.shape[0] 
+        B = (Y.T @ Y) / Y.shape[0] 
         L, C = np.linalg.eig(B)  
         sorted_idx = np.argsort(L)[::-1] 
         la1 = L[sorted_idx[0]]
         c1 = C[:, sorted_idx[0]]  
-        pc1 = np.divide(Y@c1, np.sqrt(Y.shape[0]*la1))    
-        B_dot = B - la1*np.multiply(c1, c1.T) 
+        pc1 = np.divide(Y @ c1, np.sqrt(Y.shape[0] * la1))    
+        B_dot = B - la1 * np.multiply(c1, c1.T) 
         L_, C_ = np.linalg.eig(B_dot)
         argmax_ = np.argmax(L_)
         la2 = L_[argmax_]
@@ -259,14 +259,25 @@ def conventional_pca(X, standardized=False):
         pc2 = np.divide(Y@c2, np.sqrt(Y.shape[0]*la2))  
     else:
         Y = X
-        B = (Y.T@Y)/Y.shape[0] 
+        B = (Y.T @ Y) / Y.shape[0] 
         L, C = np.linalg.eig(B)
         sorted_idx = np.argsort(L)[::-1]  
         la1 = L[sorted_idx[0]]
         c1 = C[:, sorted_idx[0]]  
-        pc1 = np.divide(Y@c1, np.sqrt(Y.shape[0]*la1))  
+        pc1 = np.divide(Y @ c1, np.sqrt(Y.shape[0] * la1))  
         la2 = L[sorted_idx[1]]
         c2 = -C[:, sorted_idx[1]]  
-        pc2 = np.divide(Y@c2, np.sqrt(Y.shape[0]*la2))
+        pc2 = np.divide(Y @ c2, np.sqrt(Y.shape[0] * la2))
     
     return pc1, pc2
+
+
+def hidden_factor(data, z, c, mu, argmax):    
+    c1 = c[argmax, :]  
+    alpha = 1 / np.sum(c1)
+    score_vector = c1 * alpha  
+
+    ranking_factors = 100 * data @ score_vector 
+    contribution = mu[argmax] ** 2 / np.sum(np.square(data))
+
+    return c1, score_vector, ranking_factors, contribution
