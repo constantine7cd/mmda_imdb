@@ -14,6 +14,7 @@ def quantification_scalar(data_frame, column_label):
         data_frame[label] = (data_frame[column_label] == value).astype(int)
     return data_frame.drop(columns=[column_label])
 
+
 def quantification_set(data_frame, column_label):
     data_frame = data_frame.copy()
     unique_values = set()
@@ -27,6 +28,7 @@ def quantification_set(data_frame, column_label):
             data_frame[label][i] = 1 if value in data_frame[column_label][i] else 0
         
     return data_frame.drop(columns=[column_label])
+
 
 def standardization(data_frame, columns_lebels=None, is_range_based=True):
     data_frame = data_frame.copy()
@@ -49,6 +51,23 @@ def standardization(data_frame, columns_lebels=None, is_range_based=True):
 # ------------------------ HW 2 ------------------------
 
 def cluster(data_frame, clusters_number, clustering_columns_labels=None):
+    """
+    Performs clustering of a object-feature data frame
+
+    Args:
+        data_frame (pd.DataFrame): matrix of shape [N, D], where
+            N is a number of data points D - number of features
+        clusters_number (int): number of clusters to compute
+        clustering_columns_labels (list): array of labels of columns
+            which will be used in clustering
+
+    Returns:
+        pd.DataFrame: copy of original data_frame with additional 
+            column 'Cluster' which specifies index of cluster for 
+            which particular data point corresponds to
+        float: inertia value
+    """
+
     import sklearn.cluster
 
     data_frame = data_frame.copy()
@@ -63,7 +82,25 @@ def cluster(data_frame, clusters_number, clustering_columns_labels=None):
 
     return data_frame, result.inertia_
 
+
 def print_clusters_info(data_frame_clustered, item_id_label=None, clustering_columns_labels=None):
+    """
+    Prints information about clusters in verbose and pretty manner (jupyter notebooks)
+
+    Args:
+        data_frame_clustered (pd.DataFrame): object-feature data frame which includes
+            'Cluster' column in which specified index of a cluster of a data point
+
+        item_id_label (str): key of a particular feature of a data set. Used to print
+            5 data points of a feature which correspond to particular cluster
+
+        clustering_columns_labels (list): array of features (str): keys of data frame 
+            which were used for clustering
+
+    Returns:
+        None
+    """
+
     from IPython.display import display
     from itertools import islice
 
@@ -100,6 +137,22 @@ def print_clusters_info(data_frame_clustered, item_id_label=None, clustering_col
 # ------------------------ HW 3 ------------------------
 
 def pivotal_conf_interval(feat_means, quantile=1.96, mean=None, std=None):
+    """
+    Computes pivotal confidense intervals for array
+    of values
+
+    Args:
+        feat_means (np.ndarray): array of shape [D,]
+        quantile (float): quantile value for standart gaussian distribution
+            which specifies confidense for intervals
+        mean (float): precomputed mean value of feat_means array. If None 
+            specified mean value will be computed inside a function
+        std (float): precomputed standart deviation value of feat_means array. 
+            If None specified deviation value will be computed inside a function
+
+    Returns:
+        tuple: left and right values for pivotal confidense interval
+    """
     if mean is None:
         mean = feat_means.mean()
         
@@ -114,6 +167,19 @@ def pivotal_conf_interval(feat_means, quantile=1.96, mean=None, std=None):
 
 
 def non_pivotal_conf_interval(feat_means, confidense=0.95):
+    """
+    Computes non-pivotal confidense intervals for array
+    of values
+
+    Args:
+        feat_means (np.ndarray): array of shape [D,]
+        confidense (float): confidense value for intervals. Has 
+            a range from 0 to 1
+
+    Returns:
+        tuple: left and right values for non-pivotal confidense interval
+    """
+
     n_trials = feat_means.shape[0]
     
     left = (1. - confidense) / 2.
@@ -132,6 +198,37 @@ def non_pivotal_conf_interval(feat_means, confidense=0.95):
 def bootstrap(
     feature, pivotal=True, non_pivotal=True, sample_size=None, \
     num_trials=5000, quantile=1.96, confidense=0.95):
+    """
+    Computes bootstrap for arbitary feature from data set. Bootstrap 
+        may include pivotal and/or non-pivotal variations depending on
+        input parameters
+
+    Args:
+        feature (np.ndarray): array of shape [N,], where N is a number
+            of data points. Represents values of a particular feature for each
+            data point
+        pivotal (bool): specifies whether to compute pivotal bootstrap or not
+        non_pivotal (bool): specifies whether to compute non-pivotal bootstrap or not
+        sample_size (int): size of subset used in bootstrap each trial. If None is
+            specified than sample size is set to N - number of data points
+        num_trials (int): number of trials used in bootstrap
+        quantile (float): if pivotal is true then quantile value should be specified.
+            Default value is 1.96, used to compute 95% confidense intervals
+        confidense (float): if non-pivotal is true then confidense value should be
+            specified. Confidense has a range from 0 to 1. 
+
+    Returns:
+        dict: {
+            'mean_trials' - np.ndarray of shape [num_trials, ], mean values of each trial;
+            'mean': global mean;
+            'std': global standart deviation;
+        }
+
+        if pivotal is True return value is tuple which in addition to dictionary includes
+            tuple of left and right pivotal confidense boundaries  
+        if non-pivotal is True return value is tuple which in addition to dictionary includes
+            tuple of left and right non-pivotal confidense boundaries  
+    """
     
     n = feature.shape[0]
     
@@ -187,10 +284,12 @@ def contingency_table(df, first_feature, second_feature):
 
     return conditional_frequency_table, quetelet_table
 
+
 def average_quetelet_index(conditional_frequency_table, quetelet_table):
     res = conditional_frequency_table.copy()
     res.iloc[:, :] = conditional_frequency_table.to_numpy() * conditional_frequency_table.to_numpy()
     return res
+
 
 def numbers_of_observations_to_be_associated(average_quetelet_index, confidence_level):
     from scipy.stats import chi2
@@ -207,31 +306,116 @@ def numbers_of_observations_to_be_associated(average_quetelet_index, confidence_
 # ------------------------ HW 5 ------------------------
 
 def zscoring_standartization(data, eps=1e-8):
+    """
+    Applies Z-scoring standartization: sutracts mean and divides by
+        standart deviation
+
+    Args: 
+        data (np.ndarray): object-feature matrix of shape [N, D], where
+            N - number of objects, D - feature dimensionality
+        eps (float): small value used to avoid division by zero in the case
+            when standart deviation = 0
+
+    Returns:
+        np.ndarray: object-feature matrix of shape [N, D]
+    """
+
     return (data - np.mean(data, axis=0)) / (np.std(data, axis=0) + eps)
 
 
 def range_standartization(data, eps=1e-8):
+    """
+    Applies range standartization: sutracts mean and divides by
+        range (max - min)
+
+    Args: 
+        data (np.ndarray): object-feature matrix of shape [N, D], where
+            N - number of objects, D - feature dimensionality
+        eps (float): small value used to avoid division by zero in the case
+            when range = 0
+
+    Returns:
+        np.ndarray: object-feature matrix of shape [N, D]
+    """
     range_ = np.max(data, axis=0) - np.min(data, axis=0)
     return (data - np.mean(data, axis=0)) / (range_ + eps)
 
 
 def rank_standartization(data, eps=1e-8):
+    """
+    Applies rank standartization: sutracts min and divides by
+        range (max - min)
+
+    Args: 
+        data (np.ndarray): object-feature matrix of shape [N, D], where
+            N - number of objects, D - feature dimensionality
+        eps (float): small value used to avoid division by zero in the case
+            when range = 0
+
+    Returns:
+        np.ndarray: object-feature matrix of shape [N, D]
+    """
+
     min_ = np.min(data, axis=0)
     range_ = np.max(data, axis=0) - min_
     return (data - min_) / (range_ + eps)
 
 
 def data_scatter(data):
-    return np.sum(np.square(data)) #np.sum(np.square(data)) 
+    """
+    Computes Data scatter (sum of squares of the elements of a matrix)
+        for object-feature data frame
+
+    Args:
+        data (np.ndarray): object-feature matrix of shape [N, D], where
+            N - number of objects, D - feature dimensionality
+
+    Returns:
+        flow: data scatter scalar value of a data matrix
+    """
+
+    return np.sum(np.square(data)) 
 
 
 def svd(data):
+    """
+    Computes singular value decomposition for arbitary object-feature
+        data frame
+
+    Args:
+        data (np.ndarray): object-feature matrix of shape [N, D], where
+            N - number of objects, D - feature dimensionality
+
+    Returns:
+        tuple: u, s, vh, where u - np.ndarray matrix of left singular vectors,
+            s - np.ndarray vector of singular values, vh - np.ndarray matrix
+            of right singular vectors. NOTE! For the purposes of homework u 
+            and vh matrices are negated.
+    """
     u, s, vh = L.svd(data, full_matrices=True)
 
     return -u, s, -vh
 
 
 def svd_scatter_contrib(data):
+    """
+    Computes svd, data scatter, natural and per cent contributions of arbitary
+        object-feature matrix. High-level routine which aggregates outputs of
+        several functions for more convenient experiments
+
+    Args:
+        data (np.ndarray): object-feature matrix of shape [N, D], where
+            N - number of objects, D - feature dimensionality
+
+    Returns:
+        tuple: u, s, vh - np.ndarrays outputs of singular-value decomposition,
+            u and vh matrices are negated; scatter - float, Data scatter of
+            data matrix; natural_contrib - np.ndarray array of shape [D,]
+            which contains natural contributions for each feature; 
+            percent_contrib - np.ndarray array of shape [D,] which contains 
+            per cent contributions for each feature
+
+    """
     scatter = data_scatter(data)
     u, s, vh = svd(data)
 
@@ -242,6 +426,21 @@ def svd_scatter_contrib(data):
 
 
 def conventional_pca(X, standardized=False):    
+    """
+    Computes first two principal components of a matrix following 
+        conventional PCA algorithm. Supported standartized and 
+        non-standartized versions of data
+
+    Args:
+        X (np.ndarray): two dimensional array of shape [N, D], N - number
+            of data points, D - dimensionality of each data point
+        standartized (bool): identifies whether input data X is standartized 
+            or not. 
+
+    Returns: 
+        tuple: two np.ndarray of shape [N,] - first and second principal
+            components of data matrix
+    """
     if standardized is False:
         mean_x = np.mean(X, axis=0)
         Y = np.subtract(X, mean_x) 
@@ -273,6 +472,19 @@ def conventional_pca(X, standardized=False):
 
 
 def hidden_factor(data, z, c, mu, argmax):    
+    """
+    Computes loadings, score vectors, ranking factors and contribution
+        for object-feature data
+
+    Args:
+        data (np.ndarray): two dimensional array of shape [N, D], N - number
+            of data points, D - dimensionality of each data point
+        z (np.ndarray): matrix of negated left singular vectors of a matrix data 
+        c (np.ndarray): matrix of negated right singular vectors of a matrix data
+        mu (np.ndarray): vectors of singular values of a matrix data
+        argmax (int): index of highest singular value in vector mu (np.argmax(mu))
+    """
+
     c1 = c[argmax, :]  
     alpha = 1 / np.sum(c1)
     score_vector = c1 * alpha  
