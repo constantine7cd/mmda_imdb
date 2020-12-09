@@ -269,7 +269,23 @@ def bootstrap(
 # ------------------------ HW 4 ------------------------
 
 def contingency_table(df, first_feature, second_feature):
-    # P(first_feature | second_feature)
+    """
+    Computes contingency and quetelet tables of the first feature over the second feature 
+    i.e. P(first_feature | second_feature)
+
+    Args:
+        df (pd.DataFrame): matrix of shape [N, D], where
+            N is a number of data points D - number of features
+
+        first_feature (str): name of the first feature in df
+
+        second_feature (str): name of the second feature in df
+
+    Returns:
+        tuple c, q: 
+            c (pd.DataFrame): conditional frequency table
+            q (pd.DataFrame): quetelet table
+    """
     conditional_frequency_table = pd.crosstab(df[first_feature], df[second_feature], normalize='columns')
 
     quetelet_table = pd.crosstab(df[first_feature], df[second_feature])
@@ -286,12 +302,37 @@ def contingency_table(df, first_feature, second_feature):
 
 
 def average_quetelet_index(conditional_frequency_table, quetelet_table):
+    """
+    Computes averege quetelet index i.e. elementwise
+    product of matrices conditional_frequency_table and quetelet_table
+
+    Args:
+        conditional_frequency_table (pd.DataFrame): conditional frequency table
+        quetelet_table (pd.DataFrame): quetelet table
+
+    Returns:
+        average_quetelet_index (np.ndarray): averege quetelet index
+    """
+
     res = conditional_frequency_table.copy()
     res.iloc[:, :] = conditional_frequency_table.to_numpy() * conditional_frequency_table.to_numpy()
     return res
 
 
 def numbers_of_observations_to_be_associated(average_quetelet_index, confidence_level):
+    """
+    Returns the number of observations needed to say that two features 
+    with given average quetelet index matrix <average_quetelet_index>
+    are associated at confidence level <confidence_level>
+    using Pearson's chi-squared test.
+
+    Args:
+        average_quetelet_index (np.ndarray): average quetelet index matrix of two features
+        confidence_level (float): needed confidence level, number between 0 and 1
+
+    Returns:
+        number of observations (int): number of observations
+    """
     from scipy.stats import chi2
     from math import ceil
 
